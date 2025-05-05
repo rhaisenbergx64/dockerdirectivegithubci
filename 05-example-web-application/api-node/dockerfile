@@ -1,0 +1,48 @@
+#Selected Base image
+FROM node:19.6-bullseye-slim AS base
+
+#set working directory
+WORKDIR /usr/src/app
+
+#copy only dependencies required
+COPY package*.json ./
+
+#set dev stage
+FROM base AS dev
+
+#set cache to save build time.
+RUN --mount=type=cache,target=/usr/src/app/.npm \
+   npm set cache /usr/src/app/.npm && \
+   npm install
+
+#copy remaining source files
+COPY . .
+
+CMD [ "npm", "run", "dev" ]
+
+#set production stage
+FROM base AS production
+
+#set enviroment stage
+ENV NODE_ENV=production
+
+#set cache to make builds faster and also install prod dependencies only.
+RUN --mount=type=cache,target=/usr/src/app/.npm \
+   npm set cache /usr/src/app/.npm && \
+   npm ci --omit=dev
+
+USER node
+
+#set node user and group as owner of the pwd
+COPY --chown=node:node ./src/ ./
+
+EXPOSE 3000
+
+CMD ["node", "index.js"]
+
+
+
+
+
+
+
