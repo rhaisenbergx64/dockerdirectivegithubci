@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - 'github-action'
-    tags:
-      - 'v*'
+  tags:
+    - 'v*'
 
 jobs:
   build-tag-push:
@@ -37,15 +37,18 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
-          file: ./05-example-web-application/api-node/dockerfile
+          file: ./05-example-web-application/api-node/Dockerfile
           context: ./05-example-web-application/api-node/
           push: true
+          pull: true
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'rhaisenberg/mydevopsdockercirepo:latest'
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
